@@ -13,7 +13,7 @@ local M = {
   win = nil,
 }
 
-M.filename = "__FLUTTER_DEV_LOG__"
+M.filename = "log"
 
 --- check if the buffer exists if does and we
 --- lost track of it's buffer number re-assign it
@@ -31,7 +31,7 @@ end
 local function create(config)
   local opts = {
     filename = M.filename,
-    filetype = "log",
+    filetype = "dwarf",
     open_cmd = config.open_cmd,
     focus_on_open = config.focus_on_open,
   }
@@ -104,7 +104,7 @@ end
 
 function M.__resurrect()
   local buf = api.nvim_get_current_buf()
-  vim.cmd("setfiletype log")
+  vim.cmd("setfiletype dwarf")
   vim.bo[buf].modifiable = false
   vim.bo[buf].modified = false
   vim.bo[buf].buftype = "nofile"
