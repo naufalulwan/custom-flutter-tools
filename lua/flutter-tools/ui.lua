@@ -1,5 +1,5 @@
 local utils = require("flutter-tools.utils")
-local log_highlight = require("log-highlight")
+local log_highlight = require("log-highlight").setup({})
 local fmt = string.format
 
 ---@enum EntryType
