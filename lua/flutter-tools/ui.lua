@@ -1,4 +1,6 @@
+local lazy = require("flutter-tools.lazy")
 local utils = require("flutter-tools.utils")
+local baleia = lazy.require("m00qek/baleia.nvim")
 local fmt = string.format
 
 ---@enum EntryType
@@ -127,8 +129,6 @@ function M.select(opts)
     on_select(item.data)
   end)
 end
-
-local baleia = require("baleia").setup({})
 
 ---Create a split window
 ---@param opts table
