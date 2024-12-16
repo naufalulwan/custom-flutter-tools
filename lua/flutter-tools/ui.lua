@@ -158,7 +158,7 @@ function M.open_win(opts, on_open)
   local open_cmd = opts.open_cmd or "botright 30vsplit"
   local name = opts.filename or "__Flutter_Tools_Terminal__"
 
-  vim.cmd(fmt("%s | terminal", open_cmd))
+  vim.cmd(fmt("%s | enew", open_cmd))
 
   local win = api.nvim_get_current_win()
   local buf = api.nvim_get_current_buf()
@@ -169,6 +169,7 @@ function M.open_win(opts, on_open)
   end
 
   vim.api.nvim_buf_set_name(buf, name)
+  vim.bo[buf].modified = false
 
   local job_id = vim.fn.termopen(opts.shell, {
     on_exit = function(_, code)
