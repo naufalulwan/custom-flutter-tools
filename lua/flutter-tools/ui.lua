@@ -1,5 +1,5 @@
 local utils = require("flutter-tools.utils")
-local Baleia = require("baleia")
+local Baleia = require("baleia").setup({})
 local fmt = string.format
 
 ---@enum EntryType
@@ -145,13 +145,7 @@ function M.open_win(opts, on_open)
   vim.bo[buf].swapfile = false
   vim.bo[buf].buftype = "nofile"
 
-  local baleia_renderer = Baleia.setup({}) -- Inisialisasi renderer Baleia
-  vim.api.nvim_buf_attach(buf, false, {
-    on_lines = function()
-      baleia_renderer(buf) -- Update buffer setiap kali ada perubahan
-    end,
-  })
-
+  Baleia.automatically(buf)
   if on_open then on_open(buf, win) end
   if not opts.focus_on_open then
     -- Switch back to the previous window
