@@ -11,6 +11,8 @@ local M = {
   buf = nil,
   --@type integer
   win = nil,
+  --@type userdata
+  term_job = nil,
 }
 
 M.filename = "log"
@@ -26,12 +28,13 @@ end
 local function close_dev_log()
   M.buf = nil
   M.win = nil
+  M.term_job = nil
 end
 
 local function create(config)
   local opts = {
     filename = M.filename,
-    filetype = "dwarf",
+    filetype = "log",
     open_cmd = config.open_cmd,
     focus_on_open = config.focus_on_open,
   }
@@ -42,6 +45,7 @@ local function create(config)
     end
     M.buf = buf
     M.win = win
+    M.term_job = vim.b[buf].terminal_job_id
     api.nvim_create_autocmd("BufWipeout", {
       buffer = buf,
       callback = close_dev_log,
@@ -56,65 +60,75 @@ end
 ---Auto-scroll the log buffer to the end of the output
 ---@param buf integer
 ---@param target_win integer
-local function autoscroll(buf, target_win)
-  local win = utils.find(
-    api.nvim_tabpage_list_wins(0),
-    function(item) return item == target_win end
-  )
-  if not win then
-    win = utils.find(
-      api.nvim_tabpage_list_wins(0),
-      function(item) return vim.api.nvim_win_get_buf(item) == buf end
-    )
-    if win then M.win = win end
-  end
-  if not win then return end
-  -- if the dev log is focused don't scroll it as it will block the user from perusing
-  if api.nvim_get_current_win() == win then return end
-  local buf_length = api.nvim_buf_line_count(buf)
-  local success, err = pcall(api.nvim_win_set_cursor, win, { buf_length, 0 })
-  if not success then
-    ui.notify(fmt("Failed to set cursor for log window %s: %s", win, err), ui.ERROR, {
-      once = true,
-    })
-  end
-end
+-- local function autoscroll(buf, target_win)
+--   local win = utils.find(
+--     api.nvim_tabpage_list_wins(0),
+--     function(item) return item == target_win end
+--   )
+--   if not win then
+--     win = utils.find(
+--       api.nvim_tabpage_list_wins(0),
+--       function(item) return vim.api.nvim_win_get_buf(item) == buf end
+--     )
+--     if win then M.win = win end
+--   end
+--   if not win then return end
+--   -- if the dev log is focused don't scroll it as it will block the user from perusing
+--   if api.nvim_get_current_win() == win then return end
+--   local buf_length = api.nvim_buf_line_count(buf)
+--   local success, err = pcall(api.nvim_win_set_cursor, win, { buf_length, 0 })
+--   if not success then
+--     ui.notify(fmt("Failed to set cursor for log window %s: %s", win, err), ui.ERROR, {
+--       once = true,
+--     })
+--   end
+-- end
 
 ---Add lines to a buffer
 ---@param buf number
 ---@param lines string[]
-local function append(buf, lines)
-  vim.bo[buf].modifiable = true
-  api.nvim_buf_set_lines(buf, -1, -1, true, lines)
-  vim.bo[buf].modifiable = false
+-- local function append(buf, lines)
+-- vim.bo[buf].modifiable = true
+-- api.nvim_buf_set_lines(buf, -1, -1, true, lines)
+-- vim.bo[buf].modifiable = false
+-- end
+
+---Append data to the terminal buffer
+---@param data string
+local function append_to_terminal(data)
+  if M.term_job then vim.fn.chansend(M.term_job, data .. "\n") end
 end
 
---- Open a log showing the output from a command
---- in this case flutter run
+---Open a log showing the output from a command
+---in this case flutter run
 ---@param data string
 function M.log(data)
   local opts = config.dev_log
   if opts.enabled then
     if not exists() then create(opts) end
     if opts.filter and not opts.filter(data) then return end
-    append(M.buf, { data })
-    autoscroll(M.buf, M.win)
+    -- append(M.buf, { data })
+    -- autoscroll(M.buf, M.win)
+    append_to_terminal(data)
   end
 end
 
-function M.__resurrect()
-  local buf = api.nvim_get_current_buf()
-  vim.cmd("setfiletype dwarf")
-  vim.bo[buf].modifiable = false
-  vim.bo[buf].modified = false
-  vim.bo[buf].buftype = "nofile"
-end
+-- function M.__resurrect()
+--   local buf = api.nvim_get_current_buf()
+--   vim.cmd("setfiletype log")
+--   vim.bo[buf].modifiable = false
+--   vim.bo[buf].modified = false
+--   vim.bo[buf].buftype = "nofile"
+-- end
 
 function M.clear()
-  if M.buf and api.nvim_buf_is_valid(M.buf) then
-    vim.bo[M.buf].modifiable = true
-    api.nvim_buf_set_lines(M.buf, 0, -1, false, {})
-    vim.bo[M.buf].modifiable = false
+  -- if M.buf and api.nvim_buf_is_valid(M.buf) then
+  --   vim.bo[M.buf].modifiable = true
+  --   api.nvim_buf_set_lines(M.buf, 0, -1, false, {})
+  --   vim.bo[M.buf].modifiable = false
+  -- end
+  if M.buf and api.nvim_buf_is_valid(M.buf) and M.term_job then
+    vim.fn.chansend(M.term_job, "\033c")
   end
 end
 
@@ -128,8 +142,8 @@ M.toggle = function()
   end
   create(config.dev_log)
   -- Auto scroll to bottom
-  local buf_length = vim.api.nvim_buf_line_count(M.buf)
-  pcall(vim.api.nvim_win_set_cursor, M.win, { buf_length, 0 })
+  -- local buf_length = vim.api.nvim_buf_line_count(M.buf)
+  -- pcall(vim.api.nvim_win_set_cursor, M.win, { buf_length, 0 })
 end
 
 return M

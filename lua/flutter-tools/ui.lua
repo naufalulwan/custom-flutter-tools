@@ -132,22 +132,59 @@ end
 ---@param opts table
 ---@param on_open fun(buf: integer, win: integer)
 ---@return nil
-function M.open_win(opts, on_open)
-  local open_cmd = opts.open_cmd or "botright 30vnew"
-  local name = opts.filename or "__Flutter_Tools_Unknown__"
-  open_cmd = fmt("%s %s", open_cmd, name)
+-- function M.open_win(opts, on_open)
+--   local open_cmd = opts.open_cmd or "botright 30vnew"
+--   local name = opts.filename or "__Flutter_Tools_Unknown__"
+--   open_cmd = fmt("%s %s", open_cmd, name)
+--
+--   vim.cmd(open_cmd)
+--   local win = api.nvim_get_current_win()
+--   local buf = api.nvim_get_current_buf()
+--   vim.bo[buf].filetype = opts.filetype
+--   vim.bo[buf].swapfile = false
+--   vim.bo[buf].buftype = "nofile"
+--   if on_open then on_open(buf, win) end
+--   if not opts.focus_on_open then
+--     -- Switch back to the previous window
+--     vim.cmd("wincmd p")
+--   end
+-- end
 
-  vim.cmd(open_cmd)
+---Create a split window
+---@param opts table
+---@param on_open fun(buf: integer, win: integer, job_id)
+---@return nil
+function M.open_win(opts, on_open)
+  local open_cmd = opts.open_cmd or "botright 30vsplit"
+  local name = opts.filename or "__Flutter_Tools_Terminal__"
+
+  vim.cmd(fmt("%s | terminal", open_cmd))
+
   local win = api.nvim_get_current_win()
   local buf = api.nvim_get_current_buf()
-  vim.bo[buf].filetype = opts.filetype
-  vim.bo[buf].swapfile = false
-  vim.bo[buf].buftype = "nofile"
-  if on_open then on_open(buf, win) end
-  if not opts.focus_on_open then
-    -- Switch back to the previous window
-    vim.cmd("wincmd p")
+
+  local job_id = vim.fn.termopen(opts.shell, {
+    on_exit = function(_, code)
+      if code ~= 0 then M.notify("Terminal exited with code " .. code, M.ERROR) end
+    end,
+  })
+
+  if not job_id then
+    M.notify("Failed to open terminal buffer", M.ERROR)
+    return
   end
+
+  vim.bo[buf].filetype = opts.filetype or "log"
+  vim.bo[buf].swapfile = false
+  vim.bo[buf].buftype = "terminal"
+  vim.bo[buf].modifiable = false
+  vim.bo[buf].modified = false
+
+  vim.api.nvim_buf_set_name(buf, name)
+
+  if on_open then on_open(buf, win, job_id) end
+
+  if not opts.focus_on_open then vim.cmd("wincmd p") end
 end
 
 return M
