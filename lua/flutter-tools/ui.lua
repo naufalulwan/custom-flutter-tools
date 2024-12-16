@@ -163,11 +163,12 @@ function M.open_win(opts, on_open)
   local win = api.nvim_get_current_win()
   local buf = api.nvim_get_current_buf()
 
-  vim.api.nvim_buf_set_name(buf, name)
+  if not api.nvim_buf_is_valid(buf) then
+    M.notify("Failed to create a valid buffer", M.ERROR)
+    return
+  end
 
-  vim.bo[buf].buftype = "nofile"
-  vim.bo[buf].modifiable = false
-  vim.bo[buf].swapfile = false
+  vim.api.nvim_buf_set_name(buf, name)
 
   local job_id = vim.fn.termopen(opts.shell, {
     on_exit = function(_, code)
@@ -180,9 +181,11 @@ function M.open_win(opts, on_open)
     return
   end
 
-  vim.bo[buf].filetype = opts.filetype or "log"
+  vim.bo[buf].filetype = opts.filetype and tostring(opts.filetype) or "log"
+  vim.bo[buf].swapfile = false
   vim.bo[buf].buftype = "terminal"
   vim.bo[buf].modifiable = false
+  vim.bo[buf].modified = false
 
   if on_open then on_open(buf, win, job_id) end
 
