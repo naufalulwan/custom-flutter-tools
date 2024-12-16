@@ -72,14 +72,23 @@ end
 ---@param opts {timeout: number, once: boolean}?
 M.notify = function(msg, level, opts)
   opts = opts or {}
+  -- Tentukan warna sesuai dengan level log
   local color = log_levels[level] and log_levels[level].color or "Normal"
-  vim.api.nvim_out_write(
-    string.format(
-      "\27[38;5;%dm%s\27[0m\n",
-      vim.fn.synIDattr(vim.fn.synIDtrans(vim.fn.hlID(color)), "fg"),
-      msg
-    )
-  )
+
+  -- Menulis output menggunakan format ANSI dengan nomor warna
+  local color_code = {
+    Error = 1, -- Red
+    WarningMsg = 3, -- Yellow
+    Normal = 7, -- White
+    Comment = 8, -- Grey
+    Directory = 4, -- Blue
+  }
+
+  -- Gunakan nomor warna ANSI, jika tidak ada, default ke Normal (putih)
+  local color_number = color_code[color] or color_code.Normal
+
+  -- Menampilkan pesan dengan warna yang sesuai
+  vim.api.nvim_out_write(string.format("\27[38;5;%dm%s\27[0m\n", color_number, msg))
 
   vim.notify(msg, level, opts)
 end
