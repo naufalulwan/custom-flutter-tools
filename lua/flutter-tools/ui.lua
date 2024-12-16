@@ -1,5 +1,5 @@
 local utils = require("flutter-tools.utils")
-local log_highlight = require("log-highlight").setup({})
+local log_highlight = require("log-highlight")
 local fmt = string.format
 
 ---@enum EntryType
@@ -145,10 +145,14 @@ function M.open_win(opts, on_open)
   vim.bo[buf].swapfile = false
   vim.bo[buf].buftype = "nofile"
 
-  log_highlight.apply(buf, {
-    lang = "ansi", -- Gunakan highlighter ANSI untuk escape sequences
-    theme = "default", -- Pilih tema bawaan (atau sesuaikan sesuai preferensi)
-  })
+  if log_highlight and log_highlight.apply then
+    log_highlight.apply(buf, {
+      lang = "ansi", -- Gunakan highlighter ANSI untuk escape sequences
+      theme = "default", -- Pilih tema bawaan
+    })
+  else
+    vim.notify("log-highlight.nvim is not available or not properly loaded.", vim.log.levels.WARN)
+  end
 
   if on_open then on_open(buf, win) end
   if not opts.focus_on_open then
