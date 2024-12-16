@@ -19,6 +19,14 @@ local M = {
   WARN = vim.log.levels.WARN,
 }
 
+local log_levels = {
+  ERROR = { level = vim.log.levels.ERROR, color = "Error" },
+  WARN = { level = vim.log.levels.WARN, color = "WarningMsg" },
+  INFO = { level = vim.log.levels.INFO, color = "Normal" },
+  DEBUG = { level = vim.log.levels.DEBUG, color = "Comment" },
+  TRACE = { level = vim.log.levels.TRACE, color = "Directory" },
+}
+
 local api = vim.api
 local namespace_id = api.nvim_create_namespace("flutter_tools_popups")
 M.entry_type = entry_type
@@ -63,15 +71,17 @@ end
 ---@param level integer
 ---@param opts {timeout: number, once: boolean}?
 M.notify = function(msg, level, opts)
-  opts, level = opts or {}, level or M.INFO
-  msg = type(msg) == "table" and utils.join(msg) or msg
-  if msg == "" then return end
-  local args = { title = "Flutter tools", timeout = opts.timeout, icon = "" }
-  if opts.once then
-    vim.notify_once(msg, level, args)
-  else
-    vim.notify(msg, level, args)
-  end
+  opts = opts or {}
+  local color = log_levels[level] and log_levels[level].color or "Normal"
+  vim.api.nvim_out_write(
+    string.format(
+      "\27[38;5;%dm%s\27[0m\n",
+      vim.fn.synIDattr(vim.fn.synIDtrans(vim.fn.hlID(color)), "fg"),
+      msg
+    )
+  )
+
+  vim.notify(msg, level, opts)
 end
 
 ---@param opts table
@@ -109,24 +119,26 @@ local function get_telescope_picker_config(items, title, on_select)
   )
 end
 
+M.select = function(opts, on_select) vim.ui.select(opts, on_select) end
+
 ---@alias PopupOpts {title:string, lines: SelectionEntry[], on_select: fun(item: SelectionEntry)}
 ---@param opts PopupOpts
-function M.select(opts)
-  assert(opts ~= nil, "An options table must be passed to popup create!")
-  local title, lines, on_select = opts.title, opts.lines, opts.on_select
-  if not lines or #lines < 1 or invalid_lines(lines) then return end
-
-  vim.ui.select(lines, {
-    prompt = title,
-    kind = "flutter-tools",
-    format_item = function(item) return item.text end,
-    -- custom key for dressing.nvim
-    telescope = get_telescope_picker_config(lines, title, on_select),
-  }, function(item)
-    if not item then return end
-    on_select(item.data)
-  end)
-end
+-- function M.select(opts)
+-- assert(opts ~= nil, "An options table must be passed to popup create!")
+-- local title, lines, on_select = opts.title, opts.lines, opts.on_select
+-- if not lines or #lines < 1 or invalid_lines(lines) then return end
+--
+-- vim.ui.select(lines, {
+--   prompt = title,
+--   kind = "flutter-tools",
+--   format_item = function(item) return item.text end,
+--   -- custom key for dressing.nvim
+--   telescope = get_telescope_picker_config(lines, title, on_select),
+-- }, function(item)
+--   if not item then return end
+--   on_select(item.data)
+-- end)
+-- end
 
 ---Create a split window
 ---@param opts table

@@ -58,40 +58,57 @@ function M.get_content()
   if M.buf then return api.nvim_buf_get_lines(M.buf, 0, -1, false) end
 end
 
+---Format the log output with colors and structure
+---@param data string
+local function format_log_output(data)
+  -- Applying color formatting to log levels
+  if data:match("ERROR") then
+    return string.format("\27[31m%s\27[0m", data) -- Red for errors
+  elseif data:match("WARN") then
+    return string.format("\27[33m%s\27[0m", data) -- Yellow for warnings
+  elseif data:match("INFO") then
+    return string.format("\27[32m%s\27[0m", data) -- Green for info
+  elseif data:match("DEBUG") then
+    return string.format("\27[36m%s\27[0m", data) -- Cyan for debug
+  else
+    return string.format("\27[37m%s\27[0m", data) -- Default (white)
+  end
+end
+
 ---Auto-scroll the log buffer to the end of the output
 ---@param buf integer
 ---@param target_win integer
--- local function autoscroll(buf, target_win)
---   local win = utils.find(
---     api.nvim_tabpage_list_wins(0),
---     function(item) return item == target_win end
---   )
---   if not win then
---     win = utils.find(
---       api.nvim_tabpage_list_wins(0),
---       function(item) return vim.api.nvim_win_get_buf(item) == buf end
---     )
---     if win then M.win = win end
---   end
---   if not win then return end
---   -- if the dev log is focused don't scroll it as it will block the user from perusing
---   if api.nvim_get_current_win() == win then return end
---   local buf_length = api.nvim_buf_line_count(buf)
---   local success, err = pcall(api.nvim_win_set_cursor, win, { buf_length, 0 })
---   if not success then
---     ui.notify(fmt("Failed to set cursor for log window %s: %s", win, err), ui.ERROR, {
---       once = true,
---     })
---   end
--- end
+local function autoscroll(buf, target_win)
+  local win = utils.find(
+    api.nvim_tabpage_list_wins(0),
+    function(item) return item == target_win end
+  )
+  if not win then
+    win = utils.find(
+      api.nvim_tabpage_list_wins(0),
+      function(item) return vim.api.nvim_win_get_buf(item) == buf end
+    )
+    if win then M.win = win end
+  end
+  if not win then return end
+  -- if the dev log is focused don't scroll it as it will block the user from perusing
+  if api.nvim_get_current_win() == win then return end
+  local buf_length = api.nvim_buf_line_count(buf)
+  local success, err = pcall(api.nvim_win_set_cursor, win, { buf_length, 0 })
+  if not success then
+    ui.notify(fmt("Failed to set cursor for log window %s: %s", win, err), ui.ERROR, {
+      once = true,
+    })
+  end
+end
 
 ---Add lines to a buffer
 ---@param buf number
 ---@param lines string[]
 -- local function append(buf, lines)
--- vim.bo[buf].modifiable = true
--- api.nvim_buf_set_lines(buf, -1, -1, true, lines)
--- vim.bo[buf].modifiable = false
+--   vim.bo[buf].modifiable = true
+--   api.nvim_buf_set_lines(buf, -1, -1, true, lines)
+--   vim.bo[buf].modifiable = false
 -- end
 
 ---Append data to the terminal buffer
@@ -109,8 +126,9 @@ function M.log(data)
     if not exists() then create(opts) end
     if opts.filter and not opts.filter(data) then return end
     -- append(M.buf, { data })
-    -- autoscroll(M.buf, M.win)
-    append_to_terminal(data)
+    local formatted_data = format_log_output(data)
+    append_to_terminal(formatted_data)
+    autoscroll(M.buf, M.win)
   end
 end
 
