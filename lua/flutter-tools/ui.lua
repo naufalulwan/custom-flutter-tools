@@ -145,14 +145,11 @@ function M.open_win(opts, on_open)
   vim.bo[buf].swapfile = false
   vim.bo[buf].buftype = "nofile"
 
-  if log_highlight and log_highlight.apply then
-    log_highlight.apply(buf, {
-      lang = "ansi", -- Gunakan highlighter ANSI untuk escape sequences
-      theme = "default", -- Pilih tema bawaan
-    })
-  else
-    vim.notify("log-highlight.nvim is not available or not properly loaded.", vim.log.levels.WARN)
-  end
+  log_highlight.setup({
+    extension = opts.filetype,
+    filename = { opts.filename },
+    pattern = { ".*flutter.*log" },
+  })
 
   if on_open then on_open(buf, win) end
   if not opts.focus_on_open then
