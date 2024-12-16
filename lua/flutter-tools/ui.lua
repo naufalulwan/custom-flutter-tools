@@ -1,6 +1,5 @@
-local lazy = require("flutter-tools.lazy")
 local utils = require("flutter-tools.utils")
-local baleia = lazy.require("m00qek/baleia.nvim")
+local Baleia = require("baleia")
 local fmt = string.format
 
 ---@enum EntryType
@@ -146,9 +145,11 @@ function M.open_win(opts, on_open)
   vim.bo[buf].swapfile = false
   vim.bo[buf].buftype = "nofile"
 
-  local baleia_buf = baleia(buf)
+  local baleia_renderer = Baleia.setup({}) -- Inisialisasi renderer Baleia
   vim.api.nvim_buf_attach(buf, false, {
-    on_lines = function() baleia_buf:update() end,
+    on_lines = function()
+      baleia_renderer(buf) -- Update buffer setiap kali ada perubahan
+    end,
   })
 
   if on_open then on_open(buf, win) end
