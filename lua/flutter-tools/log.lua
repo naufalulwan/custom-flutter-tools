@@ -37,6 +37,7 @@ local function create(config)
     filetype = "log",
     open_cmd = config.open_cmd,
     focus_on_open = config.focus_on_open,
+    shell = "pwsh",
   }
   ui.open_win(opts, function(buf, win)
     if not buf then
