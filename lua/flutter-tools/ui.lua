@@ -1,5 +1,5 @@
 local utils = require("flutter-tools.utils")
-local Baleia = require("baleia").setup({})
+local log_highlight = require("log-highlight")
 local fmt = string.format
 
 ---@enum EntryType
@@ -145,7 +145,11 @@ function M.open_win(opts, on_open)
   vim.bo[buf].swapfile = false
   vim.bo[buf].buftype = "nofile"
 
-  Baleia.automatically(buf)
+  log_highlight.apply(buf, {
+    lang = "ansi", -- Gunakan highlighter ANSI untuk escape sequences
+    theme = "default", -- Pilih tema bawaan (atau sesuaikan sesuai preferensi)
+  })
+
   if on_open then on_open(buf, win) end
   if not opts.focus_on_open then
     -- Switch back to the previous window
