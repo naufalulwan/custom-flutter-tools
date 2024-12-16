@@ -128,6 +128,8 @@ function M.select(opts)
   end)
 end
 
+local baleia = require("baleia").setup({})
+
 ---Create a split window
 ---@param opts table
 ---@param on_open fun(buf: integer, win: integer)
@@ -143,6 +145,12 @@ function M.open_win(opts, on_open)
   vim.bo[buf].filetype = opts.filetype
   vim.bo[buf].swapfile = false
   vim.bo[buf].buftype = "nofile"
+
+  local baleia_buf = baleia(buf)
+  vim.api.nvim_buf_attach(buf, false, {
+    on_lines = function() baleia_buf:update() end,
+  })
+
   if on_open then on_open(buf, win) end
   if not opts.focus_on_open then
     -- Switch back to the previous window
