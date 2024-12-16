@@ -163,6 +163,12 @@ function M.open_win(opts, on_open)
   local win = api.nvim_get_current_win()
   local buf = api.nvim_get_current_buf()
 
+  vim.api.nvim_buf_set_name(buf, name)
+
+  vim.bo[buf].buftype = "nofile"
+  vim.bo[buf].modifiable = false
+  vim.bo[buf].swapfile = false
+
   local job_id = vim.fn.termopen(opts.shell, {
     on_exit = function(_, code)
       if code ~= 0 then M.notify("Terminal exited with code " .. code, M.ERROR) end
@@ -175,12 +181,8 @@ function M.open_win(opts, on_open)
   end
 
   vim.bo[buf].filetype = opts.filetype or "log"
-  vim.bo[buf].swapfile = false
   vim.bo[buf].buftype = "terminal"
   vim.bo[buf].modifiable = false
-  vim.bo[buf].modified = false
-
-  vim.api.nvim_buf_set_name(buf, name)
 
   if on_open then on_open(buf, win, job_id) end
 
