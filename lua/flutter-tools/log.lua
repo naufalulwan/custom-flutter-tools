@@ -13,7 +13,7 @@ local M = {
   win = nil,
 }
 
-M.filename = "__FLUTTER_DEV_LOG__"
+M.filename = "dev_log"
 
 --- check if the buffer exists if does and we
 --- lost track of it's buffer number re-assign it
